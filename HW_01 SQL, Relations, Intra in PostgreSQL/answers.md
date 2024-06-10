@@ -19,14 +19,15 @@
 
 * запустить везде psql из под пользователя postgres
   * Done
-        [anton@ManageServer ~]$ sudo su - postgres -c psql                                                                    │[anton@ManageServer ~]$ sudo su - postgres -c psql
-        [sudo] пароль для anton:                                                                                              │[sudo] пароль для anton:
-        psql (16.2)                                                                                                           │psql (16.2)
-        Введите "help", чтобы получить справку.                                                                               │Введите "help", чтобы получить справку.
-                                                                                                                              │
-        postgres=# \pset pager off                                                                                            │postgres=# \pset pager off
-        Постраничник выключен.                                                                                                │Постраничник выключен.
-
+```
+      [anton@ManageServer ~]$ sudo su - postgres -c psql                                                                    │[anton@ManageServer ~]$ sudo su - postgres -c psql
+      [sudo] пароль для anton:                                                                                              │[sudo] пароль для anton:
+      psql (16.2)                                                                                                           │psql (16.2)
+      Введите "help", чтобы получить справку.                                                                               │Введите "help", чтобы получить справку.
+                                                                                                                            │
+      postgres=# \pset pager off                                                                                            │postgres=# \pset pager off
+      Постраничник выключен.                                                                                                │Постраничник выключен.
+```
 * выключить auto commit
   * Done
         postgres=# \set AUTOCOMMIT off                                                                                        │postgres=# \set AUTOCOMMIT off
