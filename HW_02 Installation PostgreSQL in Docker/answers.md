@@ -73,7 +73,7 @@
     июн 20 17:56:13 otusmanager systemd[1]: Started Docker Application Container Engine.
     [anton@otusmanager ~]$
     ```
-* сделать каталог /var/lib/postgres
+* сделать каталог /var/lib/postgresql
   * Done
     ```
     [anton@otusmanager ~]$ sudo mkdir -v /var/lib/postgresql
@@ -81,8 +81,7 @@
     [anton@otusmanager ~]$
     ```
 * развернуть контейнер с PostgreSQL 15 смонтировав в него /var/lib/postgresql
-  * Done
-    Запустим как демон
+  * Запустим ванильку для начала
     ```
     [anton@otusmanager ~]$ sudo docker run -d --name otus_postgres postgres
     Unable to find image 'postgres:latest' locally
@@ -110,14 +109,14 @@
     CONTAINER ID   IMAGE      COMMAND                  CREATED          STATUS                      PORTS     NAMES
     4b0242b458bf   postgres   "docker-entrypoint.s…"   11 minutes ago   Exited (1) 11 minutes ago             otus_postgres
     ```
-    Не стартует. Хм, ещё раз?
+  * Не стартует. Хм, ещё раз?
     ```
     [anton@otusmanager ~]$ sudo docker start otus_postgres
     otus_postgres
     [anton@otusmanager ~]$ sudo docker ps
     CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
     ```
-    Удалим, запустим "интерактивно"
+  * Удалим, запустим "интерактивно"
     ```
     [anton@otusmanager ~]$ sudo docker rm otus_postgres
     otus_postgres
@@ -136,7 +135,7 @@
     [anton@otusmanager ~]$ sudo docker rm otus_postgres
     otus_postgres
     ```
-    Ага, хочет пароль. Сдедаем. И удалять лениво, пусть сам чистит.
+  * Ага, хочет пароль. Сделаем. И удалять лениво, пусть сам чистит.
     ```
     [anton@otusmanager ~]$ sudo docker run --rm --name otus_postgres -e "POSTGRES_PASSWORD=secret" postgres
     The files belonging to this database system will be owned by user "postgres".
@@ -195,7 +194,7 @@
     2024-06-20 15:34:33.196 UTC [60] LOG:  database system was shut down at 2024-06-20 15:34:32 UTC
     2024-06-20 15:34:33.271 UTC [1] LOG:  database system is ready to accept connections
     ```
-    Запустился, работает. Откроем вторую консоль, остановим
+  * Запустился, работает. Откроем вторую консоль, остановим
     ```
     [anton@otusmanager ~]$ sudo docker ps
     [sudo] пароль для anton:
@@ -219,9 +218,16 @@
     2024-06-20 15:42:50.570 UTC [58] LOG:  checkpoint complete: wrote 0 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=1.127 s; sync files=0, longest=0.000 s, average=0.000 s; distance=0 kB, estimate=234 kB; lsn=0/152B710, redo lsn=0/152B710
     2024-06-20 15:42:50.573 UTC [1] LOG:  database system is shut down
     ```
-    Вспоминаем задание... Нам нужно пробросить /car/lib/postgresql и версия должна быть 15. Дополительно - сразу пробросим порт
+  * Вспоминаем задание... Нам нужно пробросить /var/lib/postgresql и версия должна быть 15. Дополнительно - сразу пробросим порт
     ```
-    [anton@otusmanager ~]$ sudo docker run --rm --name otus_postgres -e "POSTGRES_PASSWORD=secret" -d -p 5432:5432 -v /var/lib/postgresql:/var/lib/postgresql postgres:15
+    [anton@otusmanager ~]$ sudo docker run \
+    >                                 --rm \
+    >                                 --name otus_postgres \
+    >                                 -e "POSTGRES_PASSWORD=secret" \
+    >                                 -v /var/lib/postgresql:/var/lib/postgresql \
+    >                                 -p 5432:5432 \
+    >                                 -d \
+    >                                     postgres:15
     Unable to find image 'postgres:15' locally
     15: Pulling from library/postgres
     2cc3ae149d28: Already exists
@@ -245,7 +251,7 @@
     CONTAINER ID   IMAGE         COMMAND                  CREATED          STATUS          PORTS                                       NAMES
     bf8174905fc3   postgres:15   "docker-entrypoint.s…"   19 seconds ago   Up 14 seconds   0.0.0.0:5432->5432/tcp, :::5432->5432/tcp   otus_postgres
     ```
-    Проверим хост-директорию
+  * Проверим хост-директорию
     ```
     [anton@otusmanager ~]$ ls -laF /var/lib/postgresql/
     итого 12
@@ -255,8 +261,7 @@
     [anton@otusmanager ~]$
     ```
 * развернуть контейнер с клиентом postgres
-  * Done
-    Не стильно, но в лоб. Запустим образ Ubuntu
+  * Не стильно, но в лоб. Запустим образ Ubuntu
     ```
     [anton@otusmanager ~]$ sudo docker run -d -it --name otus_psql ubuntu
     Unable to find image 'ubuntu:latest' locally
@@ -270,7 +275,7 @@
     5f778bf96286   ubuntu        "/bin/bash"              3 minutes ago    Up 2 minutes                                                otus_psql
     bf8174905fc3   postgres:15   "docker-entrypoint.s…"   49 minutes ago   Up 49 minutes   0.0.0.0:5432->5432/tcp, :::5432->5432/tcp   otus_postgres
     ```
-    Зайдём в контейнер с Ubuntu, установим туда postgresql-client
+  * Зайдём в контейнер с Ubuntu, установим туда postgresql-client
     ```
     [anton@otusmanager ~]$ sudo docker exec -it otus_psql bash
     root@5f778bf96286:/# apt update
@@ -451,16 +456,6 @@
     psql (16.3 (Ubuntu 16.3-0ubuntu0.24.04.1), server 15.7 (Debian 15.7-1.pgdg120+1))
     Type "help" for help.
 
-    postgres=#
-    ```
-* подключится к контейнеру с сервером с ноутбука/компьютера извне инстансов GCP/ЯО/места установки докера
-  * Done
-    ```
-    [anton@ManageServer HW_01 SQL, Relations, Intra in PostgreSQL]$ psql -h 192.168.1.1 -U postgres
-    Пароль пользователя postgres:
-    psql (16.2, сервер 15.7 (Debian 15.7-1.pgdg120+1))
-    Введите "help", чтобы получить справку.
-
     postgres=# CREATE TABLE control_table (id INT, dt TIMESTAMP);
     CREATE TABLE
     postgres=# INSERT INTO control_table (id, dt) VALUES (1, now());
@@ -482,6 +477,25 @@
 
     postgres=#
     ```
+* подключится к контейнеру с сервером с ноутбука/компьютера извне инстансов GCP/ЯО/места установки докера
+  * Done
+    ```
+    [anton@ManageServer HW_02 Installation PostgreSQL in Docker]$ ip a | grep 192
+        inet 192.168.1.51/24 brd 192.168.1.255 scope global eno1
+    [anton@ManageServer HW_01 SQL, Relations, Intra in PostgreSQL]$ psql -h 192.168.1.1 -U postgres
+    Пароль пользователя postgres:
+    psql (16.2, сервер 15.7 (Debian 15.7-1.pgdg120+1))
+    Введите "help", чтобы получить справку.
+
+    postgres=# select * from control_table;
+     id |             dt
+    ----+----------------------------
+      1 | 2024-06-20 19:30:48.694327
+      2 | 2023-12-31 15:20:00.012354
+    (2 строки)
+
+    postgres=#
+    ```
 * удалить контейнер с сервером
   * Done
     ```
@@ -496,7 +510,14 @@
 * создать его заново
   * Done
     ```
-    [anton@otusmanager ~]$ sudo docker run --rm --name otus_postgres -e "POSTGRES_PASSWORD=secret" -d -p 5432:5432 -v /var/lib/postgresql:/var/lib/postgresql postgres:15
+    [anton@otusmanager ~]$ sudo docker run \
+    >                                 --rm \
+    >                                 --name otus_postgres \
+    >                                 -e "POSTGRES_PASSWORD=secret" \
+    >                                 -v /var/lib/postgresql:/var/lib/postgresql \
+    >                                 -p 5432:5432 \
+    >                                 -d \
+    >                                       postgres:15
     c3a968db21e054f68b177ea372595ee2dcda4c8223aee0e086779666856c8cf1
     [anton@otusmanager ~]$ sudo docker ps -a
     CONTAINER ID   IMAGE         COMMAND                  CREATED         STATUS         PORTS                                       NAMES
@@ -516,7 +537,7 @@
     postgres=#
     ```
 * проверить, что данные остались на месте
-  * Done
+  * Проверяем
     ```
     postgres=# SELECT * FROM control_table;
     ERROR:  relation "control_table" does not exist
@@ -524,8 +545,9 @@
                       ^
     postgres=#
     ```
-    Разочарование, недопонимание, грусть, тоска...
-    Читаем документашку https://hub.docker.com/_/postgres , перезапускаем СУБД с правильным пробросом директории и переопределением PGDATA
+  * Разочарование, недопонимание, грусть, тоска...
+  * Читаем документашку https://hub.docker.com/_/postgres
+  * Перезапускаем СУБД с правильным пробросом директории и переопределением PGDATA
     ```
     [anton@otusmanager ~]$ sudo docker stop otus_postgres
     [sudo] пароль для anton:
@@ -533,10 +555,18 @@
     [anton@otusmanager ~]$ sudo docker ps -a
     CONTAINER ID   IMAGE     COMMAND       CREATED       STATUS       PORTS     NAMES
     5f778bf96286   ubuntu    "/bin/bash"   3 hours ago   Up 3 hours             otus_psql
-    [anton@otusmanager ~]$ sudo docker run --rm --name otus_postgres -e "POSTGRES_PASSWORD=secret" -d -p 5432:5432 -v /var/lib/postgresql:/var/lib/postgresql/data -e PGDATA=/var/lib/postgresql/data/pgdata postgres:15
+    [anton@otusmanager ~]$ sudo docker run \
+    >                                 --rm \
+    >                                 --name otus_postgres \
+    >                                 -e "POSTGRES_PASSWORD=secret" \
+    >                                 -e PGDATA=/var/lib/postgresql/data/pgdata \
+    >                                 -v /var/lib/postgresql:/var/lib/postgresql/data \
+    >                                 -p 5432:5432 \
+    >                                 -d \
+    >                                       postgres:15
     01434bb36b64a99d0752ed71b519d9e99e3bcdc900822985c53e54ead12d7d61
     ```
-    Ещё раз заходим и создаём контрольную таблицу
+  * Ещё раз заходим и создаём контрольную таблицу
     ```
     [anton@otusmanager ~]$ sudo docker exec -it otus_psql bash
     root@5f778bf96286:/# psql -h 192.168.1.1 -U postgres
@@ -557,17 +587,25 @@
 
     postgres=#
     ```
-    Удаляем контейнер с СУБД, запускаем новый
+  * Удаляем контейнер с СУБД, запускаем новый
     ```
     [anton@otusmanager ~]$ sudo docker stop otus_postgres
     otus_postgres
     [anton@otusmanager ~]$ sudo docker ps -a
     CONTAINER ID   IMAGE     COMMAND       CREATED       STATUS       PORTS     NAMES
     5f778bf96286   ubuntu    "/bin/bash"   3 hours ago   Up 3 hours             otus_psql
-    [anton@otusmanager ~]$ sudo docker run --rm --name otus_postgres -e "POSTGRES_PASSWORD=secret" -d -p 5432:5432 -v /var/lib/postgresql:/var/lib/postgresql/data -e PGDATA=/var/lib/postgresql/data/pgdata postgres:15
+    [anton@otusmanager ~]$ sudo docker run \
+    >                                 --rm \
+    >                                 --name otus_postgres \
+    >                                 -e "POSTGRES_PASSWORD=secret" \
+    >                                 -e PGDATA=/var/lib/postgresql/data/pgdata \
+    >                                 -v /var/lib/postgresql:/var/lib/postgresql/data \
+    >                                 -p 5432:5432 \
+    >                                 -d \
+    >                                       postgres:15
     35d553eada8a15c179b0e5ced345bddffd59b15dc7b5797d9524c46db2c8d25d
     ```
-    Попытка № 2...
+  * Попытка № 2...
     ```
     [anton@otusmanager ~]$ sudo docker exec -it otus_psql bash
     root@5f778bf96286:/# psql -h 192.168.1.1 -U postgres
@@ -584,5 +622,5 @@
 
     postgres=#
     ```
-    Получилось
+  * Получилось
 
