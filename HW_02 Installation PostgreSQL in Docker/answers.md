@@ -73,7 +73,7 @@
     июн 20 17:56:13 otusmanager systemd[1]: Started Docker Application Container Engine.
     [anton@otusmanager ~]$
     ```
-* сделать каталог /var/lib/postgres
+* сделать каталог /var/lib/postgresql
   * Done
     ```
     [anton@otusmanager ~]$ sudo mkdir -v /var/lib/postgresql
@@ -82,7 +82,6 @@
     ```
 * развернуть контейнер с PostgreSQL 15 смонтировав в него /var/lib/postgresql
   * Done
-    Запустим как демон
     ```
     [anton@otusmanager ~]$ sudo docker run -d --name otus_postgres postgres
     Unable to find image 'postgres:latest' locally
