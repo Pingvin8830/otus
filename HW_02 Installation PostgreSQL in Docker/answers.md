@@ -224,9 +224,9 @@
     >                                 --rm \
     >                                 --name otus_postgres \
     >                                 -e "POSTGRES_PASSWORD=secret" \
-    >                                 -d \
-    >                                 -p 5432:5432 \
     >                                 -v /var/lib/postgresql:/var/lib/postgresql \
+    >                                 -p 5432:5432 \
+    >                                 -d \
     >                                     postgres:15
     Unable to find image 'postgres:15' locally
     15: Pulling from library/postgres
@@ -490,8 +490,8 @@
     postgres=# select * from control_table;
      id |             dt
     ----+----------------------------
-      1 | 2024-06-20 20:12:23.283954
-      2 | 2023-12-31 15:28:47.56129
+      1 | 2024-06-20 19:30:48.694327
+      2 | 2023-12-31 15:20:00.012354
     (2 строки)
 
     postgres=#
@@ -514,9 +514,9 @@
     >                                 --rm \
     >                                 --name otus_postgres \
     >                                 -e "POSTGRES_PASSWORD=secret" \
-    >                                 -d \
-    >                                 -p 5432:5432 \
     >                                 -v /var/lib/postgresql:/var/lib/postgresql \
+    >                                 -p 5432:5432 \
+    >                                 -d \
     >                                       postgres:15
     c3a968db21e054f68b177ea372595ee2dcda4c8223aee0e086779666856c8cf1
     [anton@otusmanager ~]$ sudo docker ps -a
@@ -561,8 +561,8 @@
     >                                 -e "POSTGRES_PASSWORD=secret" \
     >                                 -e PGDATA=/var/lib/postgresql/data/pgdata \
     >                                 -v /var/lib/postgresql:/var/lib/postgresql/data \
-    >                                 -d \
     >                                 -p 5432:5432 \
+    >                                 -d \
     >                                       postgres:15
     01434bb36b64a99d0752ed71b519d9e99e3bcdc900822985c53e54ead12d7d61
     ```
