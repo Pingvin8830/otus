@@ -289,7 +289,20 @@
 * получилось?
   * Да
 * есть идеи почему? если нет - смотрите шпаргалку
-  * Потому что мы изменили DEFAULT PRIVILEGES
+  * Потому что мы изменили DEFAULT PRIVILEGES и на вновь созданную таблицу применились права, которые там указаны.
+    ```
+    testdb=# SELECT n.nspname, d.defaclacl, c.relname, c.relacl from pg_class c
+    testdb-# JOIN             pg_namespace n on n.oid=c.relnamespace
+    testdb-# LEFT OUTER JOIN  pg_default_acl d on d.defaclnamespace=n.oid
+    testdb-# WHERE n.nspname not in ('pg_catalog', 'pg_toast', 'information_schema');
+     nspname |       defaclacl       | relname |                     relacl
+    ---------+-----------------------+---------+-------------------------------------------------
+     testnm  | {readonly=r/postgres} | t1      | {postgres=arwdDxt/postgres,readonly=r/postgres}
+     public  |                       | t2      |
+    (2 строки)
+
+    testdb=#
+    ```
 * как сделать так чтобы такое больше не повторялось? если нет идей - смотрите шпаргалку
   * Отозвать права в DEFAULT PRIVILEGES и отозвать прва на существующие таблицы для readonly
   * Либо отозвать права readonly от testread
