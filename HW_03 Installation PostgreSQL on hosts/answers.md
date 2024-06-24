@@ -484,10 +484,390 @@
 
     postgres=#
     ```
-задание со звездочкой *: не удаляя существующий инстанс ВМ сделайте новый, поставьте на его PostgreSQL, удалите файлы с данными из /var/lib/postgres, перемонтируйте внешний диск который сделали ранее от первой виртуальной машины ко второй и запустите PostgreSQL на второй машине так чтобы он работал с данными на внешнем диске, расскажите как вы это сделали и что в итоге получилось.
+* задание со звездочкой *: не удаляя существующий инстанс ВМ сделайте новый, поставьте на его PostgreSQL, удалите файлы с данными из /var/lib/postgres, перемонтируйте внешний диск который сделали ранее от первой виртуальной машины ко второй и запустите PostgreSQL на второй машине так чтобы он работал с данными на внешнем диске, расскажите как вы это сделали и что в итоге получилось.
+  * Проверяем UUID файловой системы, где сейчас находится PGDATA
+    ```
+    anton@postgres1:~$ lsblk -f /dev/sdb1
+    NAME FSTYPE FSVER LABEL UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+    sdb1 ext4   1.0         52480aa0-6146-4b05-9a87-590407079804    9,2G     0% /mnt
+    anton@postgres1:~$
+    ```
+  * Останавливаем ВМ postgres_1
+    ```
+    anton@postgres1:~$ sudo poweroff
+    Connection to postgres1.otus closed by remote host.
+    Connection to postgres1.otus closed.
+    [anton@manager ~]$
+    ```
+  * Останавливаем ВМ postgres_2
+    ```
+    [anton@manager ~]$ ssh postgres2.otus
+    anton@postgres2.otus's password:
+    Welcome to Ubuntu 22.04.4 LTS (GNU/Linux 5.15.0-112-generic x86_64)
 
-Критерии оценки:
-Выполнение ДЗ: 10 баллов
-плюс 5 баллов за задание со *
-плюс 2 балла за красивое решение
-минус 2 балла за рабочее решение, и недостатки указанные преподавателем не устранены
+     * Documentation:  https://help.ubuntu.com
+     * Management:     https://landscape.canonical.com
+     * Support:        https://ubuntu.com/pro
+
+      System information as of Пн 24 июн 2024 19:16:19 UTC
+
+      System load:  0.1728515625      Processes:               151
+      Usage of /:   41.9% of 7.50GB   Users logged in:         0
+      Memory usage: 6%                IPv4 address for enp0s3: 10.0.2.6
+      Swap usage:   0%
+
+
+    Расширенное поддержание безопасности (ESM) для Applications выключено.
+
+    25 обновлений может быть применено немедленно.
+    Чтобы просмотреть дополнительные обновления выполните: apt list --upgradable
+
+    Включите ESM Apps для получения дополнительных будущих обновлений безопасности.
+    Смотрите https://ubuntu.com/esm или выполните: sudo pro status
+
+
+    Last login: Mon Jun 24 19:16:19 2024 from 10.0.2.4
+    anton@postgres2:~$ sudo poweroff
+    [sudo] password for anton:
+    Connection to postgres2.otus closed by remote host.
+    Connection to postgres2.otus closed.
+    [anton@manager ~]$
+    ```
+  * Физически отключаем диск от postgres_1
+  * Физически подключем тот же диск к postgres_2
+  * Запускаем postgres_2, убеждаемся, что диск подключен и UUID файловой системы тот же
+    ```
+    [anton@manager ~]$ ssh postgres2.otus
+    anton@postgres2.otus's password:
+    Welcome to Ubuntu 22.04.4 LTS (GNU/Linux 5.15.0-112-generic x86_64)
+
+     * Documentation:  https://help.ubuntu.com
+     * Management:     https://landscape.canonical.com
+     * Support:        https://ubuntu.com/pro
+
+      System information as of Пн 24 июн 2024 19:22:07 UTC
+    
+      System load:  0.39013671875     Processes:               141
+      Usage of /:   42.2% of 7.50GB   Users logged in:         0
+      Memory usage: 5%                IPv4 address for enp0s3: 10.0.2.6
+      Swap usage:   0%
+
+
+    Расширенное поддержание безопасности (ESM) для Applications выключено.
+
+    25 обновлений может быть применено немедленно.
+    Чтобы просмотреть дополнительные обновления выполните: apt list --upgradable
+    
+    Включите ESM Apps для получения дополнительных будущих обновлений безопасности.
+    Смотрите https://ubuntu.com/esm или выполните: sudo pro status
+
+
+    Last login: Mon Jun 24 19:16:23 2024 from 10.0.2.4
+    anton@postgres2:~$ lsblk -f
+    NAME                      FSTYPE      FSVER    LABEL UUID                                   FSAVAIL FSUSE% MOUNTPOINTS
+    loop0                     squashfs    4.0                                                         0   100% /snap/core20/2105
+    loop1                     squashfs    4.0                                                         0   100% /snap/core20/2318
+    loop2                     squashfs    4.0                                                         0   100% /snap/lxd/27037
+    loop3                     squashfs    4.0                                                         0   100% /snap/lxd/28373
+    loop4                     squashfs    4.0                                                         0   100% /snap/snapd/20671
+    loop5                     squashfs    4.0                                                         0   100% /snap/snapd/21759
+    sda
+    ├─sda1                    vfat        FAT32          DF28-3DF7                               530,8M     1% /boot/efi
+    ├─sda2                    ext4        1.0            095cfad6-fd60-4208-9c1a-0a4cd0799b74      1,5G     8% /boot
+    └─sda3                    LVM2_member LVM2 001       BfODnq-wuCv-FZdj-h8Ih-zM4f-hHru-xGT6dD
+      └─ubuntu--vg-ubuntu--lv ext4        1.0            a6f56adb-e3be-420b-bcda-791aef3a3e4a      3,9G    42% /
+    sdb
+    └─sdb1                    ext4        1.0            52480aa0-6146-4b05-9a87-590407079804
+    sr0
+    anton@postgres2:~$
+    ```
+  * Настраиваем автомонтирование доп диска
+    ```
+    anton@postgres2:~$ sudo su -
+    [sudo] password for anton:
+    root@postgres2:~# echo "UUID=$(blkid /dev/sdb1 | cut -d'=' -f2 | cut -d' ' -f1 | sed 's/\"//g')       /mnt            ext4            rw,relatime     0 1" >> /etc/fstab
+    root@postgres2:~# cat /etc/fstab
+    # /etc/fstab: static file system information.
+    #
+    # Use 'blkid' to print the universally unique identifier for a
+    # device; this may be used with UUID= as a more robust way to name devices
+    # that works even if disks are added and removed. See fstab(5).
+    #
+    # <file system> <mount point>   <type>  <options>       <dump>  <pass>
+    # / was on /dev/ubuntu-vg/ubuntu-lv during curtin installation
+    /dev/disk/by-id/dm-uuid-LVM-AadFMeRD6cCVG1UE6ir2QIHopi6hAhXrOhtCbExi74dRta9SbkrzgMVtVfSDa0A4 / ext4 defaults 0 1
+    # /boot was on /dev/sda2 during curtin installation
+    /dev/disk/by-uuid/095cfad6-fd60-4208-9c1a-0a4cd0799b74 /boot ext4 defaults 0 1
+    # /boot/efi was on /dev/sda1 during curtin installation
+    /dev/disk/by-uuid/DF28-3DF7 /boot/efi vfat defaults 0 1
+    UUID=52480aa0-6146-4b05-9a87-590407079804       /mnt            ext4            rw,relatime     0 1
+    root@postgres2:~#
+    ```
+  * Устанавливаем PostgreSQL
+    ```
+    root@postgres2:~# apt install curl ca-certificates
+    Чтение списков пакетов… Готово
+    Построение дерева зависимостей… Готово
+    Чтение информации о состоянии… Готово
+    Уже установлен пакет ca-certificates самой новой версии (20230311ubuntu0.22.04.1).
+    ca-certificates помечен как установленный вручную.
+    Уже установлен пакет curl самой новой версии (7.81.0-1ubuntu1.16).
+    curl помечен как установленный вручную.
+    Обновлено 0 пакетов, установлено 0 новых пакетов, для удаления отмечено 0 пакетов, и 26 пакетов не обновлено.
+    root@postgres2:~# install -d /usr/share/postgresql-common/pgdg
+    root@postgres2:~# curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc
+      % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                     Dload  Upload   Total   Spent    Left  Speed
+    100  4812  100  4812    0     0   4659      0  0:00:01  0:00:01 --:--:--  4662
+    root@postgres2:~# sudo sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+    root@postgres2:~# apt update
+    Сущ:1 http://ru.archive.ubuntu.com/ubuntu jammy InRelease
+    Пол:2 http://ru.archive.ubuntu.com/ubuntu jammy-updates InRelease [128 kB]
+    Пол:3 http://security.ubuntu.com/ubuntu jammy-security InRelease [129 kB]
+    Сущ:4 http://ru.archive.ubuntu.com/ubuntu jammy-backports InRelease
+    Пол:5 http://ru.archive.ubuntu.com/ubuntu jammy/main Translation-ru [344 kB]
+    Пол:6 http://ru.archive.ubuntu.com/ubuntu jammy/restricted Translation-ru [896 B]
+    Пол:7 http://ru.archive.ubuntu.com/ubuntu jammy/universe Translation-ru [1 369 kB]
+    Пол:8 http://ru.archive.ubuntu.com/ubuntu jammy/multiverse Translation-ru [68,5 kB]
+    Пол:9 https://apt.postgresql.org/pub/repos/apt jammy-pgdg InRelease [123 kB]
+    Пол:10 https://apt.postgresql.org/pub/repos/apt jammy-pgdg/main amd64 Packages [337 kB]
+    Получено 2 499 kB за 1с (2 077 kB/s)
+    Чтение списков пакетов… Готово
+    Построение дерева зависимостей… Готово
+    Чтение информации о состоянии… Готово
+    Может быть обновлено 26 пакетов. Запустите «apt list --upgradable» для их показа.
+    root@postgres2:~#
+    root@postgres2:~# apt install postgresql-15                                                                                                                                                                                22:27:20 [72/1860]
+    Чтение списков пакетов… Готово
+    Построение дерева зависимостей… Готово
+    Чтение информации о состоянии… Готово
+    Будут установлены следующие дополнительные пакеты:
+      libcommon-sense-perl libjson-perl libjson-xs-perl libllvm15 libpq5 libsensors-config libsensors5 libtypes-serialiser-perl postgresql-client-15 postgresql-client-common postgresql-common ssl-cert sysstat
+    Предлагаемые пакеты:
+      lm-sensors postgresql-doc-15 isag
+    Следующие НОВЫЕ пакеты будут установлены:
+      libcommon-sense-perl libjson-perl libjson-xs-perl libllvm15 libpq5 libsensors-config libsensors5 libtypes-serialiser-perl postgresql-15 postgresql-client-15 postgresql-client-common postgresql-common ssl-cert sysstat
+    Обновлено 0 пакетов, установлено 14 новых пакетов, для удаления отмечено 0 пакетов, и 26 пакетов не обновлено.
+    Необходимо скачать 45,4 MB архивов.
+    После данной операции объём занятого дискового пространства возрастёт на 184 MB.
+    Хотите продолжить? [Д/н]
+    Пол:1 http://ru.archive.ubuntu.com/ubuntu jammy/main amd64 libjson-perl all 4.04000-1 [81,8 kB]
+    Пол:2 http://ru.archive.ubuntu.com/ubuntu jammy/main amd64 ssl-cert all 1.1.2 [17,4 kB]
+    Пол:3 http://ru.archive.ubuntu.com/ubuntu jammy/main amd64 libcommon-sense-perl amd64 3.75-2build1 [21,1 kB]
+    Пол:4 http://ru.archive.ubuntu.com/ubuntu jammy/main amd64 libtypes-serialiser-perl all 1.01-1 [11,6 kB]
+    Пол:5 http://ru.archive.ubuntu.com/ubuntu jammy/main amd64 libjson-xs-perl amd64 4.030-1build3 [87,2 kB]
+    Пол:6 http://ru.archive.ubuntu.com/ubuntu jammy-updates/main amd64 libllvm15 amd64 1:15.0.7-0ubuntu0.22.04.3 [25,4 MB]
+    Пол:7 https://apt.postgresql.org/pub/repos/apt jammy-pgdg/main amd64 postgresql-client-common all 260.pgdg22.04+1 [94,6 kB]
+    Пол:8 https://apt.postgresql.org/pub/repos/apt jammy-pgdg/main amd64 postgresql-common all 260.pgdg22.04+1 [240 kB]
+    Пол:9 https://apt.postgresql.org/pub/repos/apt jammy-pgdg/main amd64 libpq5 amd64 16.3-1.pgdg22.04+1 [217 kB]
+    Пол:10 https://apt.postgresql.org/pub/repos/apt jammy-pgdg/main amd64 postgresql-client-15 amd64 15.7-1.pgdg22.04+1 [1 688 kB]
+    Пол:11 http://ru.archive.ubuntu.com/ubuntu jammy/main amd64 libsensors-config all 1:3.6.0-7ubuntu1 [5 274 B]
+    Пол:12 http://ru.archive.ubuntu.com/ubuntu jammy/main amd64 libsensors5 amd64 1:3.6.0-7ubuntu1 [26,3 kB]
+    Пол:13 http://ru.archive.ubuntu.com/ubuntu jammy-updates/main amd64 sysstat amd64 12.5.2-2ubuntu0.2 [487 kB]
+    Пол:14 https://apt.postgresql.org/pub/repos/apt jammy-pgdg/main amd64 postgresql-15 amd64 15.7-1.pgdg22.04+1 [17,1 MB]
+    Получено 45,4 MB за 10с (4 407 kB/s)
+    Предварительная настройка пакетов …
+    Выбор ранее не выбранного пакета libjson-perl.
+    (Чтение базы данных … на данный момент установлено 74623 файла и каталога.)
+    Подготовка к распаковке …/00-libjson-perl_4.04000-1_all.deb …                                                                                                                                                              22:27:24 [40/1860]
+    Распаковывается libjson-perl (4.04000-1) …
+    Выбор ранее не выбранного пакета postgresql-client-common.
+    Подготовка к распаковке …/01-postgresql-client-common_260.pgdg22.04+1_all.deb …
+    Распаковывается postgresql-client-common (260.pgdg22.04+1) …
+    Выбор ранее не выбранного пакета ssl-cert.
+    Подготовка к распаковке …/02-ssl-cert_1.1.2_all.deb …
+    Распаковывается ssl-cert (1.1.2) …
+    Выбор ранее не выбранного пакета postgresql-common.
+    Подготовка к распаковке …/03-postgresql-common_260.pgdg22.04+1_all.deb …
+    Добавляется «отклонение /usr/bin/pg_config в /usr/bin/pg_config.libpq-dev из-за postgresql-common»
+    Распаковывается postgresql-common (260.pgdg22.04+1) …
+    Выбор ранее не выбранного пакета libcommon-sense-perl:amd64.
+    Подготовка к распаковке …/04-libcommon-sense-perl_3.75-2build1_amd64.deb …
+    Распаковывается libcommon-sense-perl:amd64 (3.75-2build1) …
+    Выбор ранее не выбранного пакета libtypes-serialiser-perl.
+    Подготовка к распаковке …/05-libtypes-serialiser-perl_1.01-1_all.deb …
+    Распаковывается libtypes-serialiser-perl (1.01-1) …
+    Выбор ранее не выбранного пакета libjson-xs-perl.
+    Подготовка к распаковке …/06-libjson-xs-perl_4.030-1build3_amd64.deb …
+    Распаковывается libjson-xs-perl (4.030-1build3) …
+    Выбор ранее не выбранного пакета libllvm15:amd64.
+    Подготовка к распаковке …/07-libllvm15_1%3a15.0.7-0ubuntu0.22.04.3_amd64.deb …
+    Распаковывается libllvm15:amd64 (1:15.0.7-0ubuntu0.22.04.3) …
+    Выбор ранее не выбранного пакета libpq5:amd64.
+    Подготовка к распаковке …/08-libpq5_16.3-1.pgdg22.04+1_amd64.deb …
+    Распаковывается libpq5:amd64 (16.3-1.pgdg22.04+1) …
+    Выбор ранее не выбранного пакета libsensors-config.
+    Подготовка к распаковке …/09-libsensors-config_1%3a3.6.0-7ubuntu1_all.deb …
+    Распаковывается libsensors-config (1:3.6.0-7ubuntu1) …
+    Выбор ранее не выбранного пакета libsensors5:amd64.
+    Подготовка к распаковке …/10-libsensors5_1%3a3.6.0-7ubuntu1_amd64.deb …
+    Распаковывается libsensors5:amd64 (1:3.6.0-7ubuntu1) …
+    Выбор ранее не выбранного пакета postgresql-client-15.
+    Подготовка к распаковке …/11-postgresql-client-15_15.7-1.pgdg22.04+1_amd64.deb …
+    Распаковывается postgresql-client-15 (15.7-1.pgdg22.04+1) …
+    Выбор ранее не выбранного пакета postgresql-15.
+    Подготовка к распаковке …/12-postgresql-15_15.7-1.pgdg22.04+1_amd64.deb …
+    Распаковывается postgresql-15 (15.7-1.pgdg22.04+1) …
+    Выбор ранее не выбранного пакета sysstat.
+    Подготовка к распаковке …/13-sysstat_12.5.2-2ubuntu0.2_amd64.deb …
+    Распаковывается sysstat (12.5.2-2ubuntu0.2) …
+    Настраивается пакет postgresql-client-common (260.pgdg22.04+1) …
+    Настраивается пакет libsensors-config (1:3.6.0-7ubuntu1) …
+    Настраивается пакет libpq5:amd64 (16.3-1.pgdg22.04+1) …
+    Настраивается пакет libcommon-sense-perl:amd64 (3.75-2build1) …
+    Настраивается пакет postgresql-client-15 (15.7-1.pgdg22.04+1) …
+    update-alternatives: используется /usr/share/postgresql/15/man/man1/psql.1.gz для предоставления /usr/share/man/man1/psql.1.gz (psql.1.gz) в автоматическом режиме
+    Настраивается пакет ssl-cert (1.1.2) …
+    Настраивается пакет libsensors5:amd64 (1:3.6.0-7ubuntu1) …
+    Настраивается пакет libtypes-serialiser-perl (1.01-1) …
+    Настраивается пакет libllvm15:amd64 (1:15.0.7-0ubuntu0.22.04.3) …
+    Настраивается пакет libjson-perl (4.04000-1) …
+    Настраивается пакет sysstat (12.5.2-2ubuntu0.2) …
+
+    Creating config file /etc/default/sysstat with new version
+    update-alternatives: используется /usr/bin/sar.sysstat для предоставления /usr/bin/sar (sar) в автоматическом режиме
+    Created symlink /etc/systemd/system/sysstat.service.wants/sysstat-collect.timer → /lib/systemd/system/sysstat-collect.timer.
+    Created symlink /etc/systemd/system/sysstat.service.wants/sysstat-summary.timer → /lib/systemd/system/sysstat-summary.timer.
+    Created symlink /etc/systemd/system/multi-user.target.wants/sysstat.service → /lib/systemd/system/sysstat.service.
+    Настраивается пакет libjson-xs-perl (4.030-1build3) …
+    Настраивается пакет postgresql-common (260.pgdg22.04+1) …
+    Adding user postgres to group ssl-cert
+
+    Creating config file /etc/postgresql-common/createcluster.conf with new version
+    Building PostgreSQL dictionaries from installed myspell/hunspell packages...
+    Removing obsolete dictionary files:
+    Created symlink /etc/systemd/system/multi-user.target.wants/postgresql.service → /lib/systemd/system/postgresql.service.
+    Настраивается пакет postgresql-15 (15.7-1.pgdg22.04+1) …
+    Creating new PostgreSQL cluster 15/main ...
+    /usr/lib/postgresql/15/bin/initdb -D /var/lib/postgresql/15/main --auth-local peer --auth-host scram-sha-256 --no-instructions
+    Файлы, относящиеся к этой СУБД, будут принадлежать пользователю "postgres".
+    От его имени также будет запускаться процесс сервера.
+
+    Кластер баз данных будет инициализирован с локалью "ru_RU.UTF-8".
+    Кодировка БД по умолчанию, выбранная в соответствии с настройками: "UTF8".
+    Выбрана конфигурация текстового поиска по умолчанию "russian".
+
+    Контроль целостности страниц данных отключён.
+
+    исправление прав для существующего каталога /var/lib/postgresql/15/main... ок
+    создание подкаталогов... ок
+    выбирается реализация динамической разделяемой памяти... posix
+    выбирается значение max_connections по умолчанию... 100
+    выбирается значение shared_buffers по умолчанию... 128MB
+    выбирается часовой пояс по умолчанию... Etc/UTC
+    создание конфигурационных файлов... ок
+    выполняется подготовительный скрипт... ок
+    выполняется заключительная инициализация... ок
+    сохранение данных на диске... ок
+    Обрабатываются триггеры для man-db (2.10.2-1) …
+    Обрабатываются триггеры для libc-bin (2.35-0ubuntu3.8) …
+    Scanning processes...
+    Scanning linux images...
+
+    Running kernel seems to be up-to-date.
+
+    No services need to be restarted.
+
+    No containers need to be restarted.
+
+    No user sessions are running outdated binaries.
+
+    No VM guests are running outdated hypervisor (qemu) binaries on this host.
+    root@postgres2:~#
+    ```
+  * Останавливаем postgresql
+    ```
+    root@postgres2:~# systemctl stop postgresql@15-main
+    root@postgres2:~# ps -ef | grep postgres
+    root        4362    1084  0 19:30 pts/1    00:00:00 grep --color=auto postgres
+    root@postgres2:~#
+    ```
+  * Вычищаем /var/lib/postgresql, меняем data_directory в postgresql.conf
+    ```
+    root@postgres2:~# rm -r /var/lib/postgresql/*
+    root@postgres2:~# ls -laF /var/lib/postgresql/
+    total 8
+    drwxr-xr-x  2 postgres postgres 4096 июн 24 19:31 ./
+    drwxr-xr-x 41 root     root     4096 июн 24 19:27 ../
+    root@postgres2:~# vim /etc/postgresql/15/main/postgresql.conf
+    root@postgres2:~#
+    ```
+  * Перезагружаемся
+    ```
+    root@postgres2:~# reboot
+    root@postgres2:~# Connection to postgres2.otus closed by remote host.
+    Connection to postgres2.otus closed.
+    [anton@manager ~]$
+    ```
+  * Проверяем ОС
+    ```
+    [anton@manager ~]$ ssh postgres2.otus
+    anton@postgres2.otus's password:
+    Welcome to Ubuntu 22.04.4 LTS (GNU/Linux 5.15.0-112-generic x86_64)
+
+     * Documentation:  https://help.ubuntu.com
+     * Management:     https://landscape.canonical.com
+     * Support:        https://ubuntu.com/pro
+
+      System information as of Пн 24 июн 2024 19:33:04 UTC
+
+      System load:  0.23388671875     Processes:               151
+      Usage of /:   44.8% of 7.50GB   Users logged in:         0
+      Memory usage: 6%                IPv4 address for enp0s3: 10.0.2.6
+      Swap usage:   0%
+
+
+    Расширенное поддержание безопасности (ESM) для Applications выключено.
+
+    25 обновлений может быть применено немедленно.
+    Чтобы просмотреть дополнительные обновления выполните: apt list --upgradable
+
+    Включите ESM Apps для получения дополнительных будущих обновлений безопасности.
+    Смотрите https://ubuntu.com/esm или выполните: sudo pro status
+
+
+    Last login: Mon Jun 24 19:22:07 2024 from 10.0.2.4
+    anton@postgres2:~$ systemctl --failed
+      UNIT LOAD ACTIVE SUB DESCRIPTION
+    0 loaded units listed.
+    anton@postgres2:~$ ps -ef | grep postgres
+    postgres     808       1  0 19:33 ?        00:00:00 /usr/lib/postgresql/15/bin/postgres -D /mnt/data/15/main -c config_file=/etc/postgresql/15/main/postgresql.conf
+    postgres     809     808  0 19:33 ?        00:00:00 postgres: 15/main: checkpointer
+    postgres     810     808  0 19:33 ?        00:00:00 postgres: 15/main: background writer
+    postgres     812     808  0 19:33 ?        00:00:00 postgres: 15/main: walwriter
+    postgres     813     808  0 19:33 ?        00:00:00 postgres: 15/main: autovacuum launcher
+    postgres     814     808  0 19:33 ?        00:00:00 postgres: 15/main: logical replication launcher
+    anton       1126    1114  0 19:33 pts/0    00:00:00 grep --color=auto postgres
+    anton@postgres2:~$
+    ```
+  * Проверяем контрольную таблицу
+    ```
+    anton@postgres2:~$ sudo su - postgres -c psql
+    [sudo] password for anton:
+    psql (15.7 (Ubuntu 15.7-1.pgdg22.04+1))
+    Введите "help", чтобы получить справку.
+
+    postgres=# select * from control_table;
+     id |             dt
+    ----+----------------------------
+      1 | 2024-06-24 15:47:03.208952
+    (1 строка)
+
+    postgres=# SELECT * FROM control_table;
+     id |             dt
+    ----+----------------------------
+      1 | 2024-06-24 15:47:03.208952
+    (1 строка)
+
+    postgres=# INSERT INTO control_table (id, dt) VALUES (2, now());
+    INSERT 0 1
+    postgres=# SELECT * FROM control_table;
+     id |             dt
+    ----+----------------------------
+      1 | 2024-06-24 15:47:03.208952
+      2 | 2024-06-24 19:35:02.102847
+    (2 строки)
+
+    postgres=#
+    ```
+
