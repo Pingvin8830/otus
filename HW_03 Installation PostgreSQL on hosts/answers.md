@@ -1,6 +1,7 @@
 **Описание/Пошаговая инструкция выполнения домашнего задания:**
 * создайте виртуальную машину c Ubuntu 20.04/22.04 LTS в GCE/ЯО/Virtual Box/докере
   * Созданы ВМ otus_manager (10.0.2.4), otus_postgres_1 (10.0.2.5), otus_postgres_2 (10.0.2.6), otus_postgres_3 (10.0.2.7)
+    ![Список ВМ](https://github.com/Pingvin8830/otus/blob/hw_03/HW_03%20Installation%20PostgreSQL%20on%20hosts/VMs.PNG)
 * поставьте на нее PostgreSQL 15 через sudo apt
   * Done
     ```
