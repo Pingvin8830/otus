@@ -41,6 +41,7 @@
     3: enp0s8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
     [anton@manager ~]$
     ```
+
   * Созданы ВМ otus_postgres_1 (10.0.2.5), otus_postgres_2 (10.0.2.6), otus_postgres_3 (10.0.2.7)
     ![Список ВМ](https://github.com/Pingvin8830/otus/blob/hw_03/HW_03%20Installation%20PostgreSQL%20on%20hosts/VMs.PNG)
 * поставьте на нее PostgreSQL 15 через sudo apt
