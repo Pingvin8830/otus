@@ -274,8 +274,10 @@
     anton@postgres1:~$
     ```
     ![postgres_1_one_disk](https://github.com/Pingvin8830/otus/blob/hw_03/HW_03%20Installation%20PostgreSQL%20on%20hosts/postgres_1_disks_1.PNG)
+
   * Добавим диск "физически"
-    ![postgres_1_two_disks](https://github.com/Pingvin8830/otus/blob/hw_03/HW_03%20Installation%20PostgreSQL%20on%20hosts/postgres_1_disks_extend.PNG)
+
+  ![postgres_1_two_disks](https://github.com/Pingvin8830/otus/blob/hw_03/HW_03%20Installation%20PostgreSQL%20on%20hosts/postgres_1_disks_extend.PNG)
 * добавьте свеже-созданный диск к виртуальной машине - надо зайти в режим ее редактирования и дальше выбрать пункт attach existing disk
   * Новая конфигурация
     ```
