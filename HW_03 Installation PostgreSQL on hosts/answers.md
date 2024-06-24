@@ -319,16 +319,171 @@
 
     root@postgres1:~#
     ```
-перезагрузите инстанс и убедитесь, что диск остается примонтированным (если не так смотрим в сторону fstab)
-сделайте пользователя postgres владельцем /mnt/data - chown -R postgres:postgres /mnt/data/
-перенесите содержимое /var/lib/postgres/15 в /mnt/data - mv /var/lib/postgresql/15/mnt/data
-попытайтесь запустить кластер - sudo -u postgres pg_ctlcluster 15 main start
-напишите получилось или нет и почему
-задание: найти конфигурационный параметр в файлах раположенных в /etc/postgresql/15/main который надо поменять и поменяйте его
-напишите что и почему поменяли
-попытайтесь запустить кластер - sudo -u postgres pg_ctlcluster 15 main start
-напишите получилось или нет и почему
-зайдите через через psql и проверьте содержимое ранее созданной таблицы
+* перезагрузите инстанс и убедитесь, что диск остается примонтированным (если не так смотрим в сторону fstab)
+  * Done
+    ```
+    root@postgres1:~# lsblk
+    NAME                      MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+    loop0                       7:0    0 63,9M  1 loop /snap/core20/2105
+    loop1                       7:1    0   87M  1 loop /snap/lxd/27037
+    loop2                       7:2    0 40,4M  1 loop /snap/snapd/20671
+    sda                         8:0    0   10G  0 disk
+    ├─sda1                      8:1    0  538M  0 part /boot/efi
+    ├─sda2                      8:2    0  1,8G  0 part /boot
+    └─sda3                      8:3    0  7,7G  0 part
+      └─ubuntu--vg-ubuntu--lv 253:0    0  7,7G  0 lvm  /
+    sdb                         8:16   0   10G  0 disk
+    └─sdb1                      8:17   0   10G  0 part /mnt
+    sr0                        11:0    1 1024M  0 rom
+    root@postgres1:~# reboot
+    Connection to postgres1.otus closed by remote host.
+    Connection to postgres1.otus closed.
+    [anton@manager ~]$ ssh postgres1.otus
+    anton@postgres1.otus's password:
+    Welcome to Ubuntu 22.04.4 LTS (GNU/Linux 5.15.0-112-generic x86_64)
+
+     * Documentation:  https://help.ubuntu.com
+     * Management:     https://landscape.canonical.com
+     * Support:        https://ubuntu.com/pro
+
+     System information as of Пн 24 июн 2024 16:56:10 UTC
+
+      System load:  0.0               Processes:               151
+      Usage of /:   43.0% of 7.50GB   Users logged in:         0
+      Memory usage: 6%                IPv4 address for enp0s3: 10.0.2.5
+      Swap usage:   0%
+
+
+    Расширенное поддержание безопасности (ESM) для Applications выключено.
+
+    0 обновлений может быть применено немедленно.
+
+    Включите ESM Apps для получения дополнительных будущих обновлений безопасности.
+    Смотрите https://ubuntu.com/esm или выполните: sudo pro status
+
+
+    Last login: Mon Jun 24 16:46:03 2024 from 10.0.2.4
+    anton@postgres1:~$ lsblk
+    NAME                      MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+    loop0                       7:0    0 63,9M  1 loop /snap/core20/2105
+    loop1                       7:1    0   87M  1 loop /snap/lxd/27037
+    loop2                       7:2    0 40,4M  1 loop /snap/snapd/20671
+    sda                         8:0    0   10G  0 disk
+    ├─sda1                      8:1    0  538M  0 part /boot/efi
+    ├─sda2                      8:2    0  1,8G  0 part /boot
+    └─sda3                      8:3    0  7,7G  0 part
+      └─ubuntu--vg-ubuntu--lv 253:0    0  7,7G  0 lvm  /
+    sdb                         8:16   0   10G  0 disk
+    └─sdb1                      8:17   0   10G  0 part /mnt
+    sr0                        11:0    1 1024M  0 rom
+    anton@postgres1:~$
+    ```
+* сделайте пользователя postgres владельцем /mnt/data - chown -R postgres:postgres /mnt/data/
+  * Done
+    ```
+    anton@postgres1:~$ sudo mkdir -v /mnt/data
+    [sudo] password for anton:
+    mkdir: created directory '/mnt/data'
+    anton@postgres1:~$ sudo chown -Rv postgres:postgres /mnt/data
+    ownership of '/mnt/data' retained as postgres:postgres
+    anton@postgres1:~$
+    ```
+* перенесите содержимое /var/lib/postgres/15 в /mnt/data - mv /var/lib/postgresql/15 /mnt/data
+  * Done
+    ```
+    anton@postgres1:~$ sudo pg_lsclusters
+    Ver Cluster Port Status Owner    Data directory              Log file
+    15  main    5432 online postgres /var/lib/postgresql/15/main /var/log/postgresql/postgresql-15-main.log
+    anton@postgres1:~$ sudo systemctl stop postgresql@15-main
+    anton@postgres1:~$ sudo pg_lsclusters
+    Ver Cluster Port Status Owner    Data directory              Log file
+    15  main    5432 down   postgres /var/lib/postgresql/15/main /var/log/postgresql/postgresql-15-main.log
+    anton@postgres1:~$ sudo mv /var/lib/postgresql/15 /mnt/data/
+    anton@postgres1:~$
+    ```
+* попытайтесь запустить кластер - sudo -u postgres pg_ctlcluster 15 main start
+  * Fail
+    ```
+    anton@postgres1:~$ sudo systemctl start postgresql@15-main
+    Job for postgresql@15-main.service failed because the service did not take the steps required by its unit configuration.
+    See "systemctl status postgresql@15-main.service" and "journalctl -xeu postgresql@15-main.service" for details.
+    anton@postgres1:~$
+    ```
+* напишите получилось или нет и почему
+  * Нет, не получилось. Потому что PGDATA не существует в расположениии, которое ожидает СУБД
+    ```
+    anton@postgres1:~$ sudo systemctl status postgresql@15-main
+    [sudo] password for anton:
+    × postgresql@15-main.service - PostgreSQL Cluster 15-main
+         Loaded: loaded (/lib/systemd/system/postgresql@.service; enabled-runtime; vendor preset: enabled)
+         Active: failed (Result: protocol) since Mon 2024-06-24 17:04:52 UTC; 1h 54min ago
+        Process: 1256 ExecStart=/usr/bin/pg_ctlcluster --skip-systemctl-redirect 15-main start (code=exited, status=1/FAILURE)
+            CPU: 30ms
+
+    июн 24 17:04:52 postgres1 systemd[1]: Starting PostgreSQL Cluster 15-main...
+    июн 24 17:04:52 postgres1 postgresql@15-main[1256]: Error: /var/lib/postgresql/15/main is not accessible or does not exist
+    июн 24 17:04:52 postgres1 systemd[1]: postgresql@15-main.service: Can't open PID file /run/postgresql/15-main.pid (yet?) after start: Operation not permitted
+    июн 24 17:04:52 postgres1 systemd[1]: postgresql@15-main.service: Failed with result 'protocol'.
+    июн 24 17:04:52 postgres1 systemd[1]: Failed to start PostgreSQL Cluster 15-main.
+    anton@postgres1:~$
+    ```
+* задание: найти конфигурационный параметр в файлах раположенных в /etc/postgresql/15/main который надо поменять и поменяйте его
+  * Done
+    ```
+    anton@postgres1:~$ sudo grep -R '/var/lib/postgresql/15/main' /etc/postgresql/15/main/*
+    /etc/postgresql/15/main/postgresql.conf:data_directory = '/var/lib/postgresql/15/main'          # use data in another directory
+    anton@postgres1:~$ sudo cp -v /etc/postgresql/15/main/postgresql.conf /etc/postgresql/15/main/postgresql.conf.def
+    '/etc/postgresql/15/main/postgresql.conf' -> '/etc/postgresql/15/main/postgresql.conf.def'
+    anton@postgres1:~# sudo vim /etc/postgresql/15/main/postgresql.conf
+    anton@postgres1:~$ grep data_directory /etc/postgresql/15/main/postgresql.conf
+    #data_directory = '/var/lib/postgresql/15/main'         # use data in another directory
+    data_directory = '/mnt/data/15/main'            # use data in another directory
+    anton@postgres1:~$
+    ```
+* напишите что и почему поменяли
+  * Заменили параметр конфигурации data_directory. Это каталог, в котором ожидаются файлы кластера данных PostgreSQL. Если каталог пуст, не существует, имеет неверные данные и т.п. - СУБД не запустится
+* попытайтесь запустить кластер - sudo -u postgres pg_ctlcluster 15 main start
+  * Done
+    ```
+    anton@postgres1:~$ sudo systemctl start postgresql@15-main
+    anton@postgres1:~$ sudo systemctl status postgresql@15-main
+    ● postgresql@15-main.service - PostgreSQL Cluster 15-main
+         Loaded: loaded (/lib/systemd/system/postgresql@.service; enabled-runtime; vendor preset: enabled)
+         Active: active (running) since Mon 2024-06-24 19:09:16 UTC; 3s ago
+        Process: 1629 ExecStart=/usr/bin/pg_ctlcluster --skip-systemctl-redirect 15-main start (code=exited, status=0/SUCCESS)
+       Main PID: 1634 (postgres)
+          Tasks: 6 (limit: 4537)
+         Memory: 18.7M
+            CPU: 114ms
+         CGroup: /system.slice/system-postgresql.slice/postgresql@15-main.service
+                 ├─1634 /usr/lib/postgresql/15/bin/postgres -D /mnt/data/15/main -c config_file=/etc/postgresql/15/main/postgresql.conf
+                 ├─1635 "postgres: 15/main: checkpointer " "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" ">
+                 ├─1636 "postgres: 15/main: background writer " "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "">
+                 ├─1638 "postgres: 15/main: walwriter " "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" ">
+                 ├─1639 "postgres: 15/main: autovacuum launcher " "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" >
+                 └─1640 "postgres: 15/main: logical replication launcher " "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" >
+
+    июн 24 19:09:14 postgres1 systemd[1]: Starting PostgreSQL Cluster 15-main...
+    июн 24 19:09:16 postgres1 systemd[1]: Started PostgreSQL Cluster 15-main.
+    lines 1-18/18 (END)
+    ```
+* напишите получилось или нет и почему
+  * Получилось. Потому что теперь data_directory указывает на правильное расположение данных кластера и права на файлы (поскольку мы их не меняли) - правильные
+* зайдите через через psql и проверьте содержимое ранее созданной таблицы
+  * Done
+    ```
+    anton@postgres1:~$ sudo su - postgres -c psql
+    psql (15.7 (Ubuntu 15.7-1.pgdg22.04+1))
+    Введите "help", чтобы получить справку.
+
+    postgres=# select * from control_table;
+     id |             dt
+    ----+----------------------------
+      1 | 2024-06-24 15:47:03.208952
+    (1 строка)
+
+    postgres=#
+    ```
 задание со звездочкой *: не удаляя существующий инстанс ВМ сделайте новый, поставьте на его PostgreSQL, удалите файлы с данными из /var/lib/postgres, перемонтируйте внешний диск который сделали ранее от первой виртуальной машины ко второй и запустите PostgreSQL на второй машине так чтобы он работал с данными на внешнем диске, расскажите как вы это сделали и что в итоге получилось.
 
 Критерии оценки:
