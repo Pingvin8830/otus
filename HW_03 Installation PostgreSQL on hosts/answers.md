@@ -602,9 +602,13 @@
     ```
 
   * Физически отключаем диск от postgres_1
+    ```
+    ```
   ![postgres_1_disks_one_again](https://github.com/Pingvin8830/otus/blob/hw_03/HW_03%20Installation%20PostgreSQL%20on%20hosts/postgres_1_disks_one_more.PNG)
 
   * Физически подключем тот же диск к postgres_2
+    ```
+    ```
   ![postgres_2_disks_two](https://github.com/Pingvin8830/otus/blob/hw_03/HW_03%20Installation%20PostgreSQL%20on%20hosts/postgres_2_disks_two.PNG)
 
   * Запускаем postgres_2, убеждаемся, что диск подключен и UUID файловой системы тот же
