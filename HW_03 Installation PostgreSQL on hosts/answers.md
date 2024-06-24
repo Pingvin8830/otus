@@ -181,10 +181,28 @@
     15  main    5432 online postgres /var/lib/postgresql/15/main /var/log/postgresql/postgresql-15-main.log
     anton@postgres1:~$
     ```
-зайдите из под пользователя postgres в psql и сделайте произвольную таблицу с произвольным содержимым
-postgres=# create table test(c1 text);
-postgres=# insert into test values('1');
-\q
+* зайдите из под пользователя postgres в psql и сделайте произвольную таблицу с произвольным содержимым
+  * Done
+    ```
+    anton@postgres1:~$ sudo su - postgres -c psql
+    psql (15.7 (Ubuntu 15.7-1.pgdg22.04+1))
+    Введите "help", чтобы получить справку.
+
+    postgres=# CREATE TABLE control_table (
+    postgres(#   id INT,
+    postgres(#   dt TIMESTAMP
+    postgres(# );
+    CREATE TABLE
+    postgres=# INSERT INTO control_table (id ,dt) VALUES (1, now());
+    INSERT 0 1
+    postgres=# SELECT * FROM control_table;
+     id |             dt
+    ----+----------------------------
+      1 | 2024-06-24 15:47:03.208952
+    (1 строка)
+
+    postgres=#
+    ```
 остановите postgres например через sudo -u postgres pg_ctlcluster 15 main stop
 создайте новый диск к ВМ размером 10GB
 добавьте свеже-созданный диск к виртуальной машине - надо зайти в режим ее редактирования и дальше выбрать пункт attach existing disk
