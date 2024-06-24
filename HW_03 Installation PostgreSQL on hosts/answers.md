@@ -44,7 +44,7 @@
 
   * Созданы ВМ otus_postgres_1 (10.0.2.5), otus_postgres_2 (10.0.2.6), otus_postgres_3 (10.0.2.7)
 
-  ![Список ВМ](https://github.com/Pingvin8830/otus/blob/hw_03/HW_03%20Installation%20PostgreSQL%20on%20hosts/VMs.PNG)
+  ![Список ВМ](https://github.com/Pingvin8830/otus/blob/main/HW_03%20Installation%20PostgreSQL%20on%20hosts/VMs.PNG)
 * поставьте на нее PostgreSQL 15 через sudo apt
   * Done
     ```
@@ -273,11 +273,11 @@
     sr0                        11:0    1 1024M  0 rom
     anton@postgres1:~$
     ```
-    ![postgres_1_one_disk](https://github.com/Pingvin8830/otus/blob/hw_03/HW_03%20Installation%20PostgreSQL%20on%20hosts/postgres_1_disks_1.PNG)
+    ![postgres_1_one_disk](https://github.com/Pingvin8830/otus/blob/main/HW_03%20Installation%20PostgreSQL%20on%20hosts/postgres_1_disks_1.PNG)
 
   * Добавим диск "физически"
 
-  ![postgres_1_two_disks](https://github.com/Pingvin8830/otus/blob/hw_03/HW_03%20Installation%20PostgreSQL%20on%20hosts/postgres_1_disks_extend.PNG)
+  ![postgres_1_two_disks](https://github.com/Pingvin8830/otus/blob/main/HW_03%20Installation%20PostgreSQL%20on%20hosts/postgres_1_disks_extend.PNG)
 * добавьте свеже-созданный диск к виртуальной машине - надо зайти в режим ее редактирования и дальше выбрать пункт attach existing disk
   * Новая конфигурация
     ```
@@ -604,12 +604,12 @@
   * Физически отключаем диск от postgres_1
     ```
     ```
-  ![postgres_1_disks_one_again](https://github.com/Pingvin8830/otus/blob/hw_03/HW_03%20Installation%20PostgreSQL%20on%20hosts/postgres_1_disks_one_more.PNG)
+  ![postgres_1_disks_one_again](https://github.com/Pingvin8830/otus/blob/main/HW_03%20Installation%20PostgreSQL%20on%20hosts/postgres_1_disks_one_more.PNG)
 
   * Физически подключем тот же диск к postgres_2
     ```
     ```
-  ![postgres_2_disks_two](https://github.com/Pingvin8830/otus/blob/hw_03/HW_03%20Installation%20PostgreSQL%20on%20hosts/postgres_2_disks_two.PNG)
+  ![postgres_2_disks_two](https://github.com/Pingvin8830/otus/blob/main/HW_03%20Installation%20PostgreSQL%20on%20hosts/postgres_2_disks_two.PNG)
 
   * Запускаем postgres_2, убеждаемся, что диск подключен и UUID файловой системы тот же
     ```
