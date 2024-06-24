@@ -1,6 +1,6 @@
 **Описание/Пошаговая инструкция выполнения домашнего задания:**
 * создайте виртуальную машину c Ubuntu 20.04/22.04 LTS в GCE/ЯО/Virtual Box/докере
-  * Созданы ВМ otus_manager (10.0.2.4), otus_postgres_1 (10.0.2.5), otus_postgres_2 (10.0.2.6), otus_postgres_3 (10.0.2.7)
+  * Созданы ВМ otus_manager (10.0.2.4), otus_postgres_1 (10.0.2.5), otus_postgres_2 (10.0.2.6), otus_postgres_3 (10.0.2.7). На otus_manager настроен DNS сервер.
     ![Список ВМ](https://github.com/Pingvin8830/otus/blob/hw_03/HW_03%20Installation%20PostgreSQL%20on%20hosts/VMs.PNG)
 * поставьте на нее PostgreSQL 15 через sudo apt
   * Done
@@ -230,7 +230,9 @@
     sr0                        11:0    1 1024M  0 rom
     anton@postgres1:~$
     ```
+    ![postgres_1_one_disk](https://github.com/Pingvin8830/otus/blob/hw_03/HW_03%20Installation%20PostgreSQL%20on%20hosts/postgres_1_disks_1.PNG)
   * Добавим диск "физически"
+    ![postgres_1_two_disks](https://github.com/Pingvin8830/otus/blob/hw_03/HW_03%20Installation%20PostgreSQL%20on%20hosts/postgres_1_disks_extend.PNG)
 * добавьте свеже-созданный диск к виртуальной машине - надо зайти в режим ее редактирования и дальше выбрать пункт attach existing disk
   * Новая конфигурация
     ```
@@ -500,6 +502,25 @@
     Connection to postgres1.otus closed.
     [anton@manager ~]$
     ```
+  * Проверяем диски на postgres_2
+    ```
+    anton@postgres2:~$ lsblk
+    NAME                      MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+    loop0                       7:0    0 63,9M  1 loop /snap/core20/2105
+    loop1                       7:1    0 63,9M  1 loop /snap/core20/2318
+    loop2                       7:2    0   87M  1 loop /snap/lxd/27037
+    loop3                       7:3    0   87M  1 loop /snap/lxd/28373
+    loop4                       7:4    0 40,4M  1 loop /snap/snapd/20671
+    loop5                       7:5    0 38,8M  1 loop /snap/snapd/21759
+    sda                         8:0    0   10G  0 disk
+    ├─sda1                      8:1    0  538M  0 part /boot/efi
+    ├─sda2                      8:2    0  1,8G  0 part /boot
+    └─sda3                      8:3    0  7,7G  0 part
+      └─ubuntu--vg-ubuntu--lv 253:0    0  7,7G  0 lvm  /
+    sr0                        11:0    1 1024M  0 rom
+    anton@postgres2:~$
+    ```
+    ![postgres_2_disks_one](https://github.com/Pingvin8830/otus/blob/hw_03/HW_03%20Installation%20PostgreSQL%20on%20hosts/postgres_2_disks_one.PNG)
   * Останавливаем ВМ postgres_2
     ```
     [anton@manager ~]$ ssh postgres2.otus
@@ -535,7 +556,9 @@
     [anton@manager ~]$
     ```
   * Физически отключаем диск от postgres_1
+    ![postgres_1_disks_one_again](https://github.com/Pingvin8830/otus/blob/hw_03/HW_03%20Installation%20PostgreSQL%20on%20hosts/postgres_1_disks_one_more.PNG)
   * Физически подключем тот же диск к postgres_2
+    ![postgres_2_disks_two](https://github.com/Pingvin8830/otus/blob/hw_03/HW_03%20Installation%20PostgreSQL%20on%20hosts/postgres_2_disks_two.PNG)
   * Запускаем postgres_2, убеждаемся, что диск подключен и UUID файловой системы тот же
     ```
     [anton@manager ~]$ ssh postgres2.otus
@@ -791,6 +814,9 @@
     drwxr-xr-x  2 postgres postgres 4096 июн 24 19:31 ./
     drwxr-xr-x 41 root     root     4096 июн 24 19:27 ../
     root@postgres2:~# vim /etc/postgresql/15/main/postgresql.conf
+    root@postgres2:~# grep data_directory /etc/postgresql/15/main/postgresql.conf
+    #data_directory = '/var/lib/postgresql/15/main'         # use data in another directory
+    data_directory = '/mnt/data/15/main'            # use data in another directory
     root@postgres2:~#
     ```
   * Перезагружаемся
