@@ -173,7 +173,14 @@
     No VM guests are running outdated hypervisor (qemu) binaries on this host.
     anton@postgres1:~$
     ```
-проверьте что кластер запущен через sudo -u postgres pg_lsclusters
+* проверьте что кластер запущен через sudo -u postgres pg_lsclusters
+  * Done
+    ```
+    anton@postgres1:~$ sudo -u postgres pg_lsclusters
+    Ver Cluster Port Status Owner    Data directory              Log file
+    15  main    5432 online postgres /var/lib/postgresql/15/main /var/log/postgresql/postgresql-15-main.log
+    anton@postgres1:~$
+    ```
 зайдите из под пользователя postgres в psql и сделайте произвольную таблицу с произвольным содержимым
 postgres=# create table test(c1 text);
 postgres=# insert into test values('1');
