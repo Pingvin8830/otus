@@ -1,6 +1,47 @@
 **Описание/Пошаговая инструкция выполнения домашнего задания:**
 * создайте виртуальную машину c Ubuntu 20.04/22.04 LTS в GCE/ЯО/Virtual Box/докере
-  * Созданы ВМ otus_manager (10.0.2.4), otus_postgres_1 (10.0.2.5), otus_postgres_2 (10.0.2.6), otus_postgres_3 (10.0.2.7). На otus_manager настроен DNS сервер.
+  * Создана ВМ otus_manager (10.0.2.4), на которой настроен DNS сервер
+    ```
+    [anton@manager ~]$ nslookup manager.otus
+    Server:         127.0.0.53
+    Address:        127.0.0.53#53
+
+    Non-authoritative answer:
+    Name:   manager.otus
+    Address: 10.0.2.4
+
+    [anton@manager ~]$ nslookup postgres1.otus
+    Server:         127.0.0.53
+    Address:        127.0.0.53#53
+
+    Non-authoritative answer:
+    Name:   postgres1.otus
+    Address: 10.0.2.5
+
+    [anton@manager ~]$ nslookup postgres2.otus
+    Server:         127.0.0.53
+    Address:        127.0.0.53#53
+
+    Non-authoritative answer:
+    Name:   postgres2.otus
+    Address: 10.0.2.6
+
+    [anton@manager ~]$ nslookup postgres3.otus
+    Server:         127.0.0.53
+    Address:        127.0.0.53#53
+
+    Non-authoritative answer:
+    Name:   postgres3.otus
+    Address: 10.0.2.7
+
+    [anton@manager ~]$ ip a | grep 10.
+    1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    2: enp0s3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+        inet 10.0.2.4/24 brd 10.0.2.255 scope global enp0s3
+    3: enp0s8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    [anton@manager ~]$
+    ```
+  * Созданы ВМ otus_postgres_1 (10.0.2.5), otus_postgres_2 (10.0.2.6), otus_postgres_3 (10.0.2.7)
     ![Список ВМ](https://github.com/Pingvin8830/otus/blob/hw_03/HW_03%20Installation%20PostgreSQL%20on%20hosts/VMs.PNG)
 * поставьте на нее PostgreSQL 15 через sudo apt
   * Done
@@ -415,8 +456,7 @@
 * напишите получилось или нет и почему
   * Нет, не получилось. Потому что PGDATA не существует в расположениии, которое ожидает СУБД
     ```
-    anton@postgres1:~$ sudo systemctl status postgresql@15-main
-    [sudo] password for anton:
+    anton@postgres1:~$ systemctl status postgresql@15-main
     × postgresql@15-main.service - PostgreSQL Cluster 15-main
          Loaded: loaded (/lib/systemd/system/postgresql@.service; enabled-runtime; vendor preset: enabled)
          Active: failed (Result: protocol) since Mon 2024-06-24 17:04:52 UTC; 1h 54min ago
@@ -437,7 +477,7 @@
     /etc/postgresql/15/main/postgresql.conf:data_directory = '/var/lib/postgresql/15/main'          # use data in another directory
     anton@postgres1:~$ sudo cp -v /etc/postgresql/15/main/postgresql.conf /etc/postgresql/15/main/postgresql.conf.def
     '/etc/postgresql/15/main/postgresql.conf' -> '/etc/postgresql/15/main/postgresql.conf.def'
-    anton@postgres1:~# sudo vim /etc/postgresql/15/main/postgresql.conf
+    anton@postgres1:~$ sudo vim /etc/postgresql/15/main/postgresql.conf
     anton@postgres1:~$ grep data_directory /etc/postgresql/15/main/postgresql.conf
     #data_directory = '/var/lib/postgresql/15/main'         # use data in another directory
     data_directory = '/mnt/data/15/main'            # use data in another directory
@@ -469,6 +509,7 @@
     июн 24 19:09:14 postgres1 systemd[1]: Starting PostgreSQL Cluster 15-main...
     июн 24 19:09:16 postgres1 systemd[1]: Started PostgreSQL Cluster 15-main.
     lines 1-18/18 (END)
+    anton@postgres1:~$ 
     ```
 * напишите получилось или нет и почему
   * Получилось. Потому что теперь data_directory указывает на правильное расположение данных кластера и права на файлы (поскольку мы их не меняли) - правильные
@@ -643,7 +684,7 @@
       % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                      Dload  Upload   Total   Spent    Left  Speed
     100  4812  100  4812    0     0   4659      0  0:00:01  0:00:01 --:--:--  4662
-    root@postgres2:~# sudo sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+    root@postgres2:~# sh -c 'echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
     root@postgres2:~# apt update
     Сущ:1 http://ru.archive.ubuntu.com/ubuntu jammy InRelease
     Пол:2 http://ru.archive.ubuntu.com/ubuntu jammy-updates InRelease [128 kB]
@@ -873,12 +914,6 @@
     [sudo] password for anton:
     psql (15.7 (Ubuntu 15.7-1.pgdg22.04+1))
     Введите "help", чтобы получить справку.
-
-    postgres=# select * from control_table;
-     id |             dt
-    ----+----------------------------
-      1 | 2024-06-24 15:47:03.208952
-    (1 строка)
 
     postgres=# SELECT * FROM control_table;
      id |             dt
