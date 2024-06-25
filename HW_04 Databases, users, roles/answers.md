@@ -223,7 +223,7 @@
     testdb=#
     ```
 * у вас есть идеи почему? ведь права то дали?
-  * См. выше
+  * Права дали на таблицу в схеме testnm, а таблица находится в public
 * посмотрите на список таблиц
   * Done
     ```
@@ -298,8 +298,7 @@
      nspname |       defaclacl       | relname |                     relacl
     ---------+-----------------------+---------+-------------------------------------------------
      testnm  | {readonly=r/postgres} | t1      | {postgres=arwdDxt/postgres,readonly=r/postgres}
-     public  |                       | t2      |
-    (2 строки)
+    (1 строка)
 
     testdb=#
     ```
