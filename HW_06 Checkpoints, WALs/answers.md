@@ -480,3 +480,104 @@
 
     Кластер создался, чексуммы включились. При изменении файла таблицы - запрос отрабатывает, возвращает пустой результат, структуру таблицы видно.
 
+  * Test 2
+    ```
+    anton@postgres1:~$ pg_lsclusters                                                                                                                                                                                           22:49:54 [130/169]
+    Ver Cluster    Port Status Owner    Data directory                    Log file
+    16  checksums  5434 online postgres /var/lib/postgresql/16/checksums  /var/log/postgresql/postgresql-16-checksums.log
+    16  main       5432 online postgres /var/lib/postgresql/16/main       /var/log/postgresql/postgresql-16-main.log
+    16  otus_hw_06 5433 online postgres /var/lib/postgresql/16/otus_hw_06 /var/log/postgresql/postgresql-16-otus_hw_06.log
+    anton@postgres1:~$ sudo su - postgres -c "psql -p 5434"
+    [sudo] password for anton:
+    psql (16.3 (Ubuntu 16.3-1.pgdg22.04+1))
+    Введите "help", чтобы получить справку.
+
+    postgres=# \dt
+               Список отношений
+     Схема  |   Имя   |   Тип   | Владелец
+    --------+---------+---------+----------
+     public | control | таблица | postgres
+    (1 строка)
+    
+    postgres=# CREATE TABLE control2(dt TIMESTAMP);
+    CREATE TABLE
+    postgres=# INSERT INTO control2 VALUES (NOW());
+    INSERT 0 1
+    postgres=# INSERT INTO control2 VALUES (NOW());
+    INSERT 0 1
+    postgres=# INSERT INTO control2 VALUES (NOW());
+    INSERT 0 1
+    postgres=# INSERT INTO control2 VALUES (NOW());
+    INSERT 0 1
+    postgres=# INSERT INTO control2 VALUES (NOW());
+    INSERT 0 1
+    postgres=# SELECT * FROM control2;
+                 dt
+    ----------------------------
+     2024-07-29 19:49:09.941545
+     2024-07-29 19:49:12.124574
+     2024-07-29 19:49:13.28356
+     2024-07-29 19:49:14.175992
+     2024-07-29 19:49:15.265651
+    (5 строк)
+
+    postgres=# SHOW data_checksums;
+     data_checksums
+    ----------------
+     on
+    (1 строка)
+
+    postgres=# SELECT pg_relation_filepath('control2');
+     pg_relation_filepath
+    ----------------------
+     base/5/16391
+    (1 строка)
+    
+    postgres=#
+    \q
+    anton@postgres1:~$ sudo pg_ctlcluster 16 checksums stop
+    anton@postgres1:~$ pg_lsclusters
+    Ver Cluster    Port Status Owner    Data directory                    Log file
+    16  checksums  5434 down   postgres /var/lib/postgresql/16/checksums  /var/log/postgresql/postgresql-16-checksums.log
+    16  main       5432 online postgres /var/lib/postgresql/16/main       /var/log/postgresql/postgresql-16-main.log
+    16  otus_hw_06 5433 online postgres /var/lib/postgresql/16/otus_hw_06 /var/log/postgresql/postgresql-16-otus_hw_06.log
+    anton@postgres1:~$ sudo hexedit /var/lib/postgresql/16/checksums/base/5/16391
+    anton@postgres1:~$ sudo pg_ctlcluster 16 checksums start
+    anton@postgres1:~$ sudo su - postgres -c "psql -p 5434"
+    psql (16.3 (Ubuntu 16.3-1.pgdg22.04+1))
+    Введите "help", чтобы получить справку.
+    
+    postgres=# select * from control2;
+    ПРЕДУПРЕЖДЕНИЕ:  ошибка проверки страницы: получена контрольная сумма 27228, а ожидалась - 29426
+    ОШИБКА:  неверная страница в блоке 0 отношения base/5/16391
+    postgres=# SHOW ignore_checksum_failure;
+     ignore_checksum_failure
+    -------------------------
+     off
+    (1 строка)
+    
+    postgres=# SET ignore_checksum_failure=on;
+    SET
+    postgres=# SHOW ignore_checksum_failure;
+     ignore_checksum_failure
+    -------------------------
+     on
+    (1 строка)
+    
+    postgres=# select * from control2;
+    ПРЕДУПРЕЖДЕНИЕ:  ошибка проверки страницы: получена контрольная сумма 27228, а ожидалась - 29426
+                 dt
+    ----------------------------
+     2000-01-01 01:06:05.695273
+     2024-07-29 19:49:12.124574
+     2024-07-29 19:49:13.28356
+     2024-07-29 19:49:14.175992
+     2024-07-29 19:49:15.265651
+    (5 строк)
+    
+    postgres=#
+    ```
+
+    Пояснения (мысли вслух):
+    - Удаление символов посредством vim приводит к нарушению размера страницы. Страницу несоответствующего размера СУБД не прочитала, а поскольку она одна, то в первом тесте результат выборки пустой.
+    - Во втором тесте я не удалял символы, а заменил 4 значения в конце файла на 00 с помощью Hex редактора. Таким образом данные изменились, контрольная сумма не совпала, но размер страницы остался неизменным.
