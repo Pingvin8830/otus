@@ -68,7 +68,7 @@
     ```
     backups=#
     \q
-    postgres@postgres1:~$ pg_dump -p 5433 -F c -f /var/lib/postgresql/backups/backups__schema__raw_table.gz backups
+    postgres@postgres1:~$ pg_dump -p 5433 -F c -f /var/lib/postgresql/backups/backups.gz backups
     postgres@postgres1:~$
     ```
 * Используя утилиту pg_restore восстановим в новую БД только вторую таблицу!
