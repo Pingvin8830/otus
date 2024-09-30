@@ -386,6 +386,7 @@
       [anton@manager ~]$
     ```
 **Перезапускаем СУБД**
+  * Done
     ```
       [anton@manager ~]$ ssh postgres1.otus "sudo -S systemctl restart postgresql@14-replication"
       [sudo] password for anton:
