@@ -398,4 +398,318 @@
       [sudo] password for anton:
       [anton@manager ~]$
     ```
+**Дальнейшие действия можно выполнять с управляющего хоста**
+  * Создаём пользователей для репликации
+    ```
+      [anton@manager ~]$ echo "\\set PROMPT1 '[%M] %n@%/%R%#%x '" > ~/.psqlrc
+      [anton@manager ~]$
+      [anton@manager ~]$ psql -U postgres -h postgres1.otus -c "CREATE ROLE postgres2_repl LOGIN REPLICATION PASSWORD 'postgres2'"
+      CREATE ROLE
+      [anton@manager ~]$ psql -U postgres -h postgres1.otus -c "CREATE ROLE postgres3_repl LOGIN REPLICATION PASSWORD 'postgres3'"
+      CREATE ROLE
+      [anton@manager ~]$
+      [anton@manager ~]$ psql -U postgres -h postgres2.otus -c "CREATE ROLE postgres1_repl LOGIN REPLICATION PASSWORD 'postgres1'"
+      CREATE ROLE
+      [anton@manager ~]$ psql -U postgres -h postgres2.otus -c "CREATE ROLE postgres3_repl LOGIN REPLICATION PASSWORD 'postgres3'"
+      CREATE ROLE
+      [anton@manager ~]$
+      [anton@manager ~]$ psql -U postgres -h postgres3.otus -c "CREATE ROLE postgres4_repl LOGIN REPLICATION PASSWORD 'postgres4'"
+      CREATE ROLE
+      [anton@manager ~]$
+    ```
+  * Создаём БД
+    ```
+      [anton@manager ~]$ psql -U postgres -h postgres1.otus -c "CREATE DATABASE repl_db"
+      CREATE DATABASE
+      [anton@manager ~]$ psql -U postgres -h postgres2.otus -c "CREATE DATABASE repl_db"
+      CREATE DATABASE
+      [anton@manager ~]$ psql -U postgres -h postgres3.otus -c "CREATE DATABASE repl_db"
+      CREATE DATABASE
+      [anton@manager ~]$
+    ```
+  * Создаём таблицы
+    ```
+      [anton@manager ~]$ cat sql
+      CREATE TABLE test (
+        id INT,
+        name VARCHAR(20)
+      );
+    
+      CREATE TABLE test2 (
+        id INT,
+        city VARCHAR(20)
+      );
+      [anton@manager ~]$
+      [anton@manager ~]$ psql -U postgres -h postgres1.otus -d repl_db -f sql
+      CREATE TABLE
+      CREATE TABLE
+      [anton@manager ~]$ psql -U postgres -h postgres2.otus -d repl_db -f sql
+      CREATE TABLE
+      CREATE TABLE
+      [anton@manager ~]$ psql -U postgres -h postgres3.otus -d repl_db -f sql
+      CREATE TABLE
+      CREATE TABLE
+      [anton@manager ~]$
+    ```
+  * Даём права
+    ```
+      [anton@manager ~]$ psql -U postgres -h postgres1.otus -d repl_db -c "GRANT select ON TABLE test TO postgres2_repl"
+      GRANT
+      [anton@manager ~]$ psql -U postgres -h postgres1.otus -d repl_db -c "GRANT select ON TABLE test TO postgres3_repl"
+      GRANT
+      [anton@manager ~]$
+      [anton@manager ~]$ psql -U postgres -h postgres2.otus -d repl_db -c "GRANT select ON TABLE test2 TO postgres1_repl"
+      GRANT
+      [anton@manager ~]$ psql -U postgres -h postgres2.otus -d repl_db -c "GRANT select ON TABLE test2 TO postgres3_repl"
+      GRANT
+      [anton@manager ~]$
+    ```
+  * Создаём публикации
+    ```
+      [anton@manager ~]$ psql -U postgres -h postgres1.otus -d repl_db -c "CREATE PUBLICATION postgres1_pub FOR TABLE test"
+      CREATE PUBLICATION
+      [anton@manager ~]$ psql -U postgres -h postgres2.otus -d repl_db -c "CREATE PUBLICATION postgres2_pub FOR TABLE test2"
+      CREATE PUBLICATION
+      [anton@manager ~]$
+    ```
+  * Создаём подписки
+    ```
+      [anton@manager ~]$ psql -U postgres -h postgres1.otus -d repl_db -c "CREATE SUBSCRIPTION postgres1_sub CONNECTION 'postgresql://postgres1_repl:postgres1@postgres2.otus/repl_db' PUBLICATION postgres2_pub"
+      ЗАМЕЧАНИЕ:  на сервере публикации создан слот репликации "postgres1_sub"
+      CREATE SUBSCRIPTION
+      [anton@manager ~]$
+      [anton@manager ~]$ psql -U postgres -h postgres2.otus -d repl_db -c "CREATE SUBSCRIPTION postgres2_sub CONNECTION 'postgresql://postgres2_repl:postgres2@postgres1.otus/repl_db' PUBLICATION postgres1_pub"
+      ЗАМЕЧАНИЕ:  на сервере публикации создан слот репликации "postgres2_sub"
+      CREATE SUBSCRIPTION
+      [anton@manager ~]$
+      [anton@manager ~]$ psql -U postgres -h postgres3.otus -d repl_db -c "CREATE SUBSCRIPTION postgres3_sub_1 CONNECTION 'postgresql://postgres3_repl:postgres3@postgres1.otus/repl_db' PUBLICATION postgres1_pub"
+      ЗАМЕЧАНИЕ:  на сервере публикации создан слот репликации "postgres3_sub_1"
+      CREATE SUBSCRIPTION
+      [anton@manager ~]$
+      [anton@manager ~]$ psql -U postgres -h postgres3.otus -d repl_db -c "CREATE SUBSCRIPTION postgres3_sub_2 CONNECTION 'postgresql://postgres3_repl:postgres3@postgres2.otus/repl_db' PUBLICATION postgres2_pub"
+      ЗАМЕЧАНИЕ:  на сервере публикации создан слот репликации "postgres3_sub_2"
+      CREATE SUBSCRIPTION
+      [anton@manager ~]$
+    ```
+  * Тест публикации ВМ 1
+    ```
+      [anton@manager ~]$ psql -U postgres -h postgres1.otus -d repl_db -c "SELECT * FROM test"
+       id | name
+      ----+------
+      (0 строк)
 
+      [anton@manager ~]$ psql -U postgres -h postgres2.otus -d repl_db -c "SELECT * FROM test"
+       id | name
+      ----+------
+      (0 строк)
+
+      [anton@manager ~]$ psql -U postgres -h postgres3.otus -d repl_db -c "SELECT * FROM test"
+       id | name
+      ----+------
+      (0 строк)
+
+      [anton@manager ~]$ psql -U postgres -h postgres4.otus -d repl_db -c "SELECT * FROM test"
+      psql: ошибка: подключиться к серверу "postgres4.otus" (10.0.2.8), порту 5432 не удалось: ВАЖНО:  база данных "repl_db" не существует
+      [anton@manager ~]$
+      [anton@manager ~]$ psql -U postgres -h postgres1.otus -d repl_db -c "INSERT INTO test VALUES (1, 'Vlasov Anton')"
+      INSERT 0 1
+      [anton@manager ~]$ psql -U postgres -h postgres1.otus -d repl_db -c "SELECT * FROM test"
+       id |     name
+      ----+--------------
+        1 | Vlasov Anton
+      (1 строка)
+
+      [anton@manager ~]$ psql -U postgres -h postgres2.otus -d repl_db -c "SELECT * FROM test"
+       id |     name
+      ----+--------------
+        1 | Vlasov Anton
+      (1 строка)
+
+      [anton@manager ~]$ psql -U postgres -h postgres3.otus -d repl_db -c "SELECT * FROM test"
+       id |     name
+      ----+--------------
+        1 | Vlasov Anton
+      (1 строка)
+
+      [anton@manager ~]$ psql -U postgres -h postgres4.otus -d repl_db -c "SELECT * FROM test"
+      psql: ошибка: подключиться к серверу "postgres4.otus" (10.0.2.8), порту 5432 не удалось: ВАЖНО:  база данных "repl_db" не существует
+      [anton@manager ~]$
+    ```
+  * Тест публикации ВМ 2
+    ```
+      [anton@manager ~]$ psql -U postgres -h postgres1.otus -d repl_db -c "SELECT * FROM test2"
+       id | city
+      ----+------
+      (0 строк)
+
+      [anton@manager ~]$ psql -U postgres -h postgres2.otus -d repl_db -c "SELECT * FROM test2"
+       id | city
+      ----+------
+      (0 строк)
+
+      [anton@manager ~]$ psql -U postgres -h postgres3.otus -d repl_db -c "SELECT * FROM test2"
+       id | city
+      ----+------
+      (0 строк)
+
+      [anton@manager ~]$ psql -U postgres -h postgres4.otus -d repl_db -c "SELECT * FROM test2"
+      psql: ошибка: подключиться к серверу "postgres4.otus" (10.0.2.8), порту 5432 не удалось: ВАЖНО:  база данных "repl_db" не существует
+      [anton@manager ~]$
+      [anton@manager ~]$ psql -U postgres -h postgres2.otus -d repl_db -c "INSERT INTO test2 VALUES (1, 'Saint-Petesburg')"
+      INSERT 0 1
+      [anton@manager ~]$ psql -U postgres -h postgres1.otus -d repl_db -c "SELECT * FROM test2"
+       id |      city
+      ----+-----------------
+        1 | Saint-Petesburg
+      (1 строка)
+
+      [anton@manager ~]$ psql -U postgres -h postgres2.otus -d repl_db -c "SELECT * FROM test2"
+       id |      city
+      ----+-----------------
+        1 | Saint-Petesburg
+      (1 строка)
+
+      [anton@manager ~]$ psql -U postgres -h postgres3.otus -d repl_db -c "SELECT * FROM test2"
+       id |      city
+      ----+-----------------
+        1 | Saint-Petesburg
+      (1 строка)
+
+      [anton@manager ~]$ psql -U postgres -h postgres4.otus -d repl_db -c "SELECT * FROM test2"
+      psql: ошибка: подключиться к серверу "postgres4.otus" (10.0.2.8), порту 5432 не удалось: ВАЖНО:  база данных "repl_db" не существует
+      [anton@manager ~]$
+    ```
+  * Настраиваем физическую репликацию на ВМ 4
+    ```
+      [anton@manager ~]$ ssh postgres4.otus
+      anton@postgres4:~$ sudo su -
+      [sudo] password for anton:
+      root@postgres4:~#
+      root@postgres4:~# systemctl stop postgresql@16-replication
+      root@postgres4:~#
+      root@postgres4:~# su - postgres
+      postgres@postgres4:~$
+      postgres@postgres4:~$ rm -r /var/lib/postgresql/16/replication/*
+      postgres@postgres4:~$
+      postgres@postgres4:~$ pg_basebackup -P -R -X stream -c fast -h postgres3.otus -U postgres4_repl -D /var/lib/postgresql/16/replication
+      Пароль:
+      30800/30800 КБ (100%), табличное пространство 1/1
+      postgres@postgres4:~$
+      postgres@postgres4:~$
+      logout
+      root@postgres4:~#
+      root@postgres4:~# systemctl start postgresql@16-replication
+      root@postgres4:~#
+      root@postgres4:~#
+      logout
+      anton@postgres4:~$
+      logout
+      Connection to postgres4.otus closed.
+      [anton@manager ~]$
+    ```
+  * Тест физической репликации
+    ```
+      [anton@manager ~]$ psql -U postgres -h postgres1.otus -d repl_db -c "SELECT * FROM test; SELECT * FROM test2"
+       id |     name
+      ----+--------------
+        1 | Vlasov Anton
+      (1 строка)
+
+       id |      city
+      ----+-----------------
+        1 | Saint-Petesburg
+      (1 строка)
+
+      [anton@manager ~]$ psql -U postgres -h postgres2.otus -d repl_db -c "SELECT * FROM test; SELECT * FROM test2"
+       id |     name
+      ----+--------------
+        1 | Vlasov Anton
+      (1 строка)
+
+       id |      city
+      ----+-----------------
+        1 | Saint-Petesburg
+      (1 строка)
+
+      [anton@manager ~]$ psql -U postgres -h postgres3.otus -d repl_db -c "SELECT * FROM test; SELECT * FROM test2"
+       id |     name
+      ----+--------------
+        1 | Vlasov Anton
+      (1 строка)
+
+       id |      city
+      ----+-----------------
+        1 | Saint-Petesburg
+      (1 строка)
+
+      [anton@manager ~]$ psql -U postgres -h postgres4.otus -d repl_db -c "SELECT * FROM test; SELECT * FROM test2"
+       id |     name
+      ----+--------------
+        1 | Vlasov Anton
+      (1 строка)
+      
+       id |      city
+      ----+-----------------
+        1 | Saint-Petesburg
+      (1 строка)
+
+      [anton@manager ~]$
+      [anton@manager ~]$ psql -U postgres -h postgres1.otus -d repl_db -c "INSERT INTO test VALUES (2, 'Test replication')"
+      INSERT 0 1
+      [anton@manager ~]$ psql -U postgres -h postgres2.otus -d repl_db -c "INSERT INTO test2 VALUES (2, 'Moscow')"
+      INSERT 0 1
+      [anton@manager ~]$
+      [anton@manager ~]$ psql -U postgres -h postgres1.otus -d repl_db -c "SELECT * FROM test; SELECT * FROM test2"
+       id |       name
+      ----+------------------
+        1 | Vlasov Anton
+        2 | Test replication
+      (2 строки)
+
+       id |      city
+      ----+-----------------
+        1 | Saint-Petesburg
+        2 | Moscow
+      (2 строки)
+
+      [anton@manager ~]$ psql -U postgres -h postgres2.otus -d repl_db -c "SELECT * FROM test; SELECT * FROM test2"
+       id |       name
+      ----+------------------
+        1 | Vlasov Anton
+        2 | Test replication
+      (2 строки)
+
+       id |      city
+      ----+-----------------
+        1 | Saint-Petesburg
+        2 | Moscow
+      (2 строки)
+
+      [anton@manager ~]$ psql -U postgres -h postgres3.otus -d repl_db -c "SELECT * FROM test; SELECT * FROM test2"
+       id |       name
+      ----+------------------
+        1 | Vlasov Anton
+        2 | Test replication
+      (2 строки)
+
+       id |      city
+      ----+-----------------
+        1 | Saint-Petesburg
+        2 | Moscow
+      (2 строки)
+
+      [anton@manager ~]$ psql -U postgres -h postgres4.otus -d repl_db -c "SELECT * FROM test; SELECT * FROM test2"
+       id |       name
+      ----+------------------
+        1 | Vlasov Anton
+        2 | Test replication
+      (2 строки)
+
+       id |      city
+      ----+-----------------
+        1 | Saint-Petesburg
+        2 | Moscow
+      (2 строки)
+
+      [anton@manager ~]$
+    ```
