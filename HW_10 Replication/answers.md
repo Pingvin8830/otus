@@ -7,7 +7,8 @@
 * * реализовать горячее реплицирование для высокой доступности на 4ВМ. Источником должна выступать ВМ №3. Написать с какими проблемами столкнулись.
 
 **Выполнение**
-1 Создание кластеров данных
+
+**Создание кластеров данных**
   * На ВМ 1 создаём кластер данных PostgreSQL 14
     ```
       [anton@manager ~]$ ssh postgres1.otus
@@ -168,7 +169,7 @@
       Connection to postgres4.otus closed.
       [anton@manager ~]$
     ```
-1 Разрешаем сетевые подключения к кластерам данных
+**Разрешаем сетевые подключения к кластерам данных**
   * ВМ 1
     ```
       [anton@manager ~]$ ssh postgres1.otus
@@ -229,7 +230,7 @@
       Connection to postgres4.otus closed.
       [anton@manager ~]$
     ```
-1 Разрешаем подключения пользователей для репликации
+**Разрешаем подключения пользователей для репликации**
   * На ВМ 1 - для ВМ 2 и ВМ 3
     ```
       [anton@manager ~]$ ssh postgres1.otus
@@ -277,7 +278,7 @@
       Connection to postgres3.otus closed.
       [anton@manager ~]$
     ```
-1 Настраиваем уровень журнала предзаписи
+**Настраиваем уровень журнала предзаписи**
   * На ВМ 1
     ```
       [anton@manager ~]$ ssh postgres1.otus
@@ -323,7 +324,7 @@
       Connection to postgres3.otus closed.
       [anton@manager ~]$
     ```
-1 Для некоторого упрощения разрешаем подключения пользователю postgres с административной машины
+**Для некоторого упрощения разрешаем подключения пользователю postgres с административной машины**
   * На ВМ 1
     ```
       [anton@manager ~]$ ssh postgres1.otus
@@ -384,7 +385,7 @@
       Connection to postgres4.otus closed.
       [anton@manager ~]$
     ```
-1 Перезапускаем СУБД
+**Перезапускаем СУБД**
     ```
       [anton@manager ~]$ ssh postgres1.otus "sudo -S systemctl restart postgresql@14-replication"
       [sudo] password for anton:
