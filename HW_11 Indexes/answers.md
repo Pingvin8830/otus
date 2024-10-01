@@ -21,6 +21,8 @@
       indexes(# );
       CREATE TABLE
       [postgres1.otus] postgres@indexes=#
+      [postgres1.otus] postgres@indexes=# INSERT INTO test (id, name, family, city) SELECT generate_series, 'name ' || generate_series, 'family ' || generate_series, 'city ' || generate_series FROM generate_series(1,1000000);
+      INSERT 0 1000000
       [postgres1.otus] postgres@indexes=# EXPLAIN SELECT * FROM test WHERE id<20;
                                      QUERY PLAN
       -------------------------------------------------------------------------
@@ -30,8 +32,6 @@
                Filter: (id < 20)
       (4 строки)
 
-      [postgres1.otus] postgres@indexes=# INSERT INTO test (id, name, family, city) SELECT generate_series, 'name ' || generate_series, 'family ' || generate_series, 'city ' || generate_series FROM generate_series(1,1000000);
-      INSERT 0 1000000
       [postgres1.otus] postgres@indexes=#
     ```
 * Прислать текстом результат команды explain, в которой используется данный индекс
@@ -49,7 +49,39 @@
       [postgres1.otus] postgres@indexes=#
     ```
 * Реализовать индекс для полнотекстового поиска
-  
+  * Done
+    ```
+      [postgres1.otus] postgres@indexes=# SELECT * FROM test WHERE to_tsvector('english', name) @@ to_tsquery('english', '1000');
+        id  |   name    |   family    |   city
+      ------+-----------+-------------+-----------
+       1000 | name 1000 | family 1000 | city 1000
+      (1 строка)
+
+      [postgres1.otus] postgres@indexes=# EXPLAIN SELECT * FROM test WHERE to_tsvector('english', name) @@ to_tsquery('english', '1000');
+                                              QUERY PLAN
+      ------------------------------------------------------------------------------------------
+       Gather  (cost=1000.00..120120.00 rows=5000 width=39)
+         Workers Planned: 2
+         ->  Parallel Seq Scan on test  (cost=0.00..118620.00 rows=2083 width=39)
+               Filter: (to_tsvector('english'::regconfig, (name)::text) @@ '''1000'''::tsquery)
+       JIT:
+         Functions: 2
+         Options: Inlining false, Optimization false, Expressions true, Deforming true
+      (7 строк)
+
+      [postgres1.otus] postgres@indexes=# CREATE INDEX test_name_idx ON test USING GIN (to_tsvector('english', name));
+      CREATE INDEX
+      [postgres1.otus] postgres@indexes=# EXPLAIN SELECT * FROM test WHERE to_tsvector('english', name) @@ to_tsquery('english', '1000');
+                                                QUERY PLAN
+      ----------------------------------------------------------------------------------------------
+       Bitmap Heap Scan on test  (cost=51.73..9403.62 rows=5000 width=39)
+         Recheck Cond: (to_tsvector('english'::regconfig, (name)::text) @@ '''1000'''::tsquery)
+         ->  Bitmap Index Scan on test_name_idx  (cost=0.00..50.48 rows=5000 width=0)
+               Index Cond: (to_tsvector('english'::regconfig, (name)::text) @@ '''1000'''::tsquery)
+      (4 строки)
+
+      [postgres1.otus] postgres@indexes=#
+    ```
 * Реализовать индекс на часть таблицы или индекс на поле с функцией
   * Done
     ```
